@@ -211,7 +211,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     parser.add_argument(
-        "-d","--device", type=str, required=False, default='cpu', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
+        "-d","--device", type=str, required=False, default='cuda', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
     )
     parser.add_argument(
         "-e","--epochs", type=int, required=False, default=35, help="Number of epochs to train the model, default=35. Ex : --epochs 200", metavar=""
@@ -500,12 +500,12 @@ if __name__ == "__main__":
         elif MODEL == 'GRU':
             num_layers = 11
             model = GRU(SEQ_LEN,len(features)-2,num_layers = 11).to(DEVICE) # 20 * 15 = 300
-        elif MODEL == 'CfC':
+        elif MODEL == 'CFC':
             model = CfC(len(features)-2,1).to(DEVICE) 
         elif MODEL == 'LTC':
             units = 32
             wiring = AutoNCP(units, 1) 
-            model = LTC(len(features)-2, wiring, batch_first=True)
+            model = LTC(len(features)-2, wiring, batch_first=True).to(DEVICE)
         model.name = model.__class__.__name__
 
         # Loss function
