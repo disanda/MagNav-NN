@@ -271,7 +271,7 @@ if __name__ == "__main__":
     flights_num = [2,3,4,6,7]
     
     for n in flights_num:
-        df = pd.read_hdf('./data/Flt_data.h5', key=f'Flt100{n}')
+        df = pd.read_hdf('../Flt_data.h5', key=f'Flt100{n}')
         flights[n] = df
     
     print(f'Data import done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
@@ -515,7 +515,7 @@ if __name__ == "__main__":
         RMSE_history.append(Best_RMSE)
         
         if fold == 0:
-            folder_path = f'models/=HF_{hidden_features}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}'
+            folder_path = f'experiments/=HF_{hidden_features}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}'
             #os.mkdir(folder_path)
             os.makedirs(folder_path, exist_ok=True)
         torch.save(Best_model,folder_path+f'/{Best_model.name}_fold{fold}.pt')
