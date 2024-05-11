@@ -90,9 +90,9 @@ def make_training(model, epochs, train_loader, test_loader, scaling=['None']):
                 else:
                     predictions, h1 = model(inputs,h1[-inputs.size()[0]:].detach())
                     #print('########################')
-                predictions = predictions[:,-1,:]
             else:
                 predictions = model(inputs)
+            predictions = predictions[:,-1,:]
 
             # Compute the loss
             loss = criterion(predictions, labels)
@@ -140,10 +140,7 @@ def make_training(model, epochs, train_loader, test_loader, scaling=['None']):
                 #predictions = model(inputs)
 
                 # Make predictions for this batch
-                if model.__class__.__name__ != 'CfC':
-                    predictions = model(inputs)
-                    #print('------------------------')
-                else:
+                if model.__class__.__name__ == 'CfC' or 'LTC':
                     inputs = inputs.transpose(2,1) # (batch_size, seq, in_features) > (batch_size, in_features, seq)
                     if batch_index == 0:
                         h0 = torch.zeros(inputs.size()[0],1).to(DEVICE)
@@ -152,7 +149,9 @@ def make_training(model, epochs, train_loader, test_loader, scaling=['None']):
                     else:
                         predictions, h1 = model(inputs,h1[-inputs.size()[0]:].detach())
                         #print('########################')
-                    predictions = predictions[:,-1,:]
+                else:
+                    predictions = model(inputs)
+                predictions = predictions[:,-1,:]
                 
                 # Save prediction for this batch
                 preds.append(predictions.cpu())
@@ -211,7 +210,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     parser.add_argument(
-        "-d","--device", type=str, required=False, default='cuda', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
+        "-d","--device", type=str, required=False, default='cpu', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
     )
     parser.add_argument(
         "-e","--epochs", type=int, required=False, default=35, help="Number of epochs to train the model, default=35. Ex : --epochs 200", metavar=""
