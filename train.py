@@ -233,7 +233,7 @@ if __name__ == "__main__":
         "-tr", "--truth", type=str, required=False, default='IGRFMAG1', help="Name of the variable corresponding to the truth for training the model. Ex : --truth 'IGRFMAG1'", metavar=''
     )
     parser.add_argument(
-        "-ml", "--model", type=str, required=False, default='mlp', help="Name of the model to use. Available models : 'MLP', 'CNN', 'ResNet18', 'LSTM', 'GRU', 'ResNet18v2', 'MLP_3L, MLP_3Lv2' 'LTC', 'CFC'. Ex : --model 'CNN'", metavar=''
+        "-ml", "--model", type=str, required=False, default='MLP', help="Name of the model to use. Available models : 'MLP', 'CNN', 'ResNet18', 'LSTM', 'GRU', 'ResNet18v2', 'MLP_3L, MLP_3Lv2' 'LTC', 'CFC'. Ex : --model 'CNN'", metavar=''
     )
     parser.add_argument(
         "-wd", "--weight_decay", type=float, required=False, default=0.001, help="Adam weight decay value. Ex : --weight_decay 0.00001", metavar=''
