@@ -245,9 +245,9 @@ if __name__ == "__main__":
 
     # set seed for reproducibility
     args.seed = 28 # 27
-    torch.manual_seed(seed)
-    random.seed(seed)
-    np.random.seed(seed)
+    torch.manual_seed(args.seed)
+    random.seed(args.seed)
+    np.random.seed(args.seed)
 
     #args.in_f_name = 'FLUXCD_X_Y_Z_TOT-D_noBat1' #'CUR_STRB',
     #args.shuffle_= True
