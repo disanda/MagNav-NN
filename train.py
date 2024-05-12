@@ -136,7 +136,7 @@ def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']
             for batch_index, (inputs, labels) in enumerate(test_loader):
 
                 # Put data to the desired device (CPU or GPU)
-                inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+                inputs, labels = inputs.to(args.device), labels.to(args.device)
 
                 # Make prediction for this batch
                 #predictions = model(inputs)
@@ -145,7 +145,7 @@ def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']
                 if model.__class__.__name__ == 'CfC' or 'LTC':
                     inputs = inputs.transpose(2,1) # (batch_size, seq, in_features) > (batch_size, in_features, seq)
                     if batch_index == 0:
-                        h0 = torch.zeros(inputs.size()[0],1).to(DEVICE)
+                        h0 = torch.zeros(inputs.size()[0],1).to(args.device)
                         predictions, h1 = model(inputs,h0) # (batch_size, seq, out_features)/(batch_size, out_features)
                         #print('=======================')
                     else:
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     
     parser.add_argument(
         "-d","--device", type=str, required=False, default='cuda', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
-    )
+    ) # args.device
     parser.add_argument(
         "-e","--epochs", type=int, required=False, default=20, help="Number of epochs to train the model, default=35. Ex : --epochs 200", metavar=""
     ) # args.epochs
