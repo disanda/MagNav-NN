@@ -83,7 +83,7 @@ def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']
             optimizer.zero_grad()
 
             # Make predictions for this batch
-            if model.__class__.__name__ == 'CFC' or 'LTC':
+            if model.__class__.__name__ == ('CFC' or 'LTC'):
                 inputs = inputs.transpose(2,1) # (batch_size, seq, in_features) > (batch_size, in_features, seq)
                 if batch_index == 0:
                     h0 = torch.zeros(inputs.size()[0],1).to(args.device)
@@ -151,9 +151,9 @@ def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']
                     else:
                         predictions, h1 = model(inputs,h1[-inputs.size()[0]:].detach())
                         #print('########################')
-            else:
-                predictions = model(inputs)
-            predictions = predictions[:,-1,:]
+                else:
+                    predictions = model(inputs)
+                predictions = predictions[:,-1,:]
                 
                 # Save prediction for this batch
                 preds.append(predictions.cpu())
