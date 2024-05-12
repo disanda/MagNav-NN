@@ -46,9 +46,10 @@ def make_training(model, epochs, train_loader, test_loader, scaling=['None']):
     - `test_loss_history` : history of loss values during testing
     '''
     # Optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=WEIGHT_DECAY) # 1st:0.001
-    lambda1 = lambda epoch: 0.9**epoch
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.002, weight_decay=WEIGHT_DECAY) # 1st:0.001
+    
+    #lambda1 = lambda epoch: 0.9**epoch
+    #scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
     
     # Create batch and epoch progress bar
     batch_bar = tqdm(total=len(train)//BATCH_SIZE,unit="batch",desc='Training',leave=False, position=0, ncols=150)
@@ -81,7 +82,7 @@ def make_training(model, epochs, train_loader, test_loader, scaling=['None']):
             optimizer.zero_grad()
 
             # Make predictions for this batch
-            if model.__class__.__name__ == 'CfC' or 'LTC':
+            if model.__class__.__name__ == 'CFC' or 'LTC':
                 inputs = inputs.transpose(2,1) # (batch_size, seq, in_features) > (batch_size, in_features, seq)
                 if batch_index == 0:
                     h0 = torch.zeros(inputs.size()[0],1).to(DEVICE)
@@ -113,7 +114,7 @@ def make_training(model, epochs, train_loader, test_loader, scaling=['None']):
             batch_bar.update()
         
         # Update learning rate
-        scheduler.step()
+        #scheduler.step()
 
         # Compute the loss of the batch and save it
         train_loss = train_running_loss / batch_index
@@ -231,7 +232,7 @@ if __name__ == "__main__":
         "-cor", "--corrections", type=int, required=False, default=3, help="Data correction, 0 for no corrections, 1 for IGRF correction, 2 for diurnal correction, 3 for IGRF+diurnal correction. Ex : --corrections 3", metavar=''
     )
     parser.add_argument(
-        "-tl", "--tolleslawson", type=int, required=False, default=1, help="Apply Tolles-Lawson compensation to data, 0 for no compensation, 1 for compensation. Ex : --tolleslawson 1", metavar=''
+        "-tl", "--tolleslawson", type=int, required=False, default=2, help="Apply Tolles-Lawson compensation to data, 0 for no compensation, 1 for compensation. Ex : --tolleslawson 1", metavar=''
     )
     parser.add_argument(
         "-tr", "--truth", type=str, required=False, default='IGRFMAG1', help="Name of the variable corresponding to the truth for training the model. Ex : --truth 'IGRFMAG1'", metavar=''
@@ -502,7 +503,7 @@ if __name__ == "__main__":
         elif MODEL == 'CFC':
             model = CfC(len(features)-2,1).to(DEVICE) 
         elif MODEL == 'LTC':
-            units = 32
+            units = 16
             wiring = AutoNCP(units, 1) 
             model = LTC(len(features)-2, wiring, batch_first=True).to(DEVICE)
         model.name = model.__class__.__name__
