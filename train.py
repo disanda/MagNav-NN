@@ -211,7 +211,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     parser.add_argument(
-        "-d","--device", type=str, required=False, default='cpu', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
+        "-d","--device", type=str, required=False, default='cuda', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
     )
     parser.add_argument(
         "-e","--epochs", type=int, required=False, default=35, help="Number of epochs to train the model, default=35. Ex : --epochs 200", metavar=""
@@ -232,7 +232,7 @@ if __name__ == "__main__":
         "-cor", "--corrections", type=int, required=False, default=3, help="Data correction, 0 for no corrections, 1 for IGRF correction, 2 for diurnal correction, 3 for IGRF+diurnal correction. Ex : --corrections 3", metavar=''
     )
     parser.add_argument(
-        "-tl", "--tolleslawson", type=int, required=False, default=2, help="Apply Tolles-Lawson compensation to data, 0 for no compensation, 1 for compensation. Ex : --tolleslawson 1", metavar=''
+        "-tl", "--tolleslawson", type=int, required=False, default=1, help="Apply Tolles-Lawson compensation to data, 0 for no compensation, 1 for compensation. Ex : --tolleslawson 1", metavar=''
     )
     parser.add_argument(
         "-tr", "--truth", type=str, required=False, default='IGRFMAG1', help="Name of the variable corresponding to the truth for training the model. Ex : --truth 'IGRFMAG1'", metavar=''
@@ -330,9 +330,7 @@ if __name__ == "__main__":
     if TL == 1:
         mags_to_cor = ['TL_comp_mag4_cl', 'TL_comp_mag5_cl']
         mags_to_cor2 = []
-    if TL == 2:
-        mags_to_cor = ['TL_comp_mag4_cl', 'TL_comp_mag5_cl']
-        mags_to_cor2 = ['UNCOMPMAG4', 'UNCOMPMAG5']
+
     
     # Always keep the 'LINE' feature in the feature list so that the MagNavDataset function can split the flight data
     other_features = [#'V_BAT1',
@@ -349,6 +347,7 @@ if __name__ == "__main__":
                 'TL_comp_mag2_cl','TL_comp_mag3_cl',
                 'FLUXC_X','FLUXC_Y','FLUXC_Z',#'FLUXC_TOT',
                 'FLUXD_X','FLUXD_Y','FLUXD_Z','FLUXD_TOT',
+                'UNCOMPMAG4', 'UNCOMPMAG5'
                 #in_f_name,
                 TRUTH]
     features = mags_to_cor + mags_to_cor2 + other_features 
