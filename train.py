@@ -53,7 +53,7 @@ def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']
     #scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
     
     # Create batch and epoch progress bar
-    batch_bar = tqdm(total=len(train)//BATCH_SIZE,unit="batch",desc='Training',leave=False, position=0, ncols=150)
+    batch_bar = tqdm(total=len(train)//args.batch,unit="batch",desc='Training',leave=False, position=0, ncols=150)
     epoch_bar = tqdm(total=epochs,unit="epoch",desc='Training',leave=False, position=1, ncols=150)
     
     train_loss_history = []
@@ -215,11 +215,11 @@ if __name__ == "__main__":
         "-d","--device", type=str, required=False, default='cuda', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
     )
     parser.add_argument(
-        "-e","--epochs", type=int, required=False, default=10, help="Number of epochs to train the model, default=35. Ex : --epochs 200", metavar=""
-    )
+        "-e","--epochs", type=int, required=False, default=20, help="Number of epochs to train the model, default=35. Ex : --epochs 200", metavar=""
+    ) # args.epochs
     parser.add_argument(
-        "-b","--batch", type=int, required=False, default=7, help="Batch size for training, default=256. Ex : --batch 64", metavar=""
-    )
+        "-b","--batch", type=int, required=False, default=32, help="Batch size for training, default=256. Ex : --batch 64", metavar=""
+    ) # args.batch
     parser.add_argument(
         "-sq","--seq", type=int, required=False, default=1, help="Length sequence of data, default=20. Ex : --seq 15", metavar=""
     )
@@ -239,33 +239,28 @@ if __name__ == "__main__":
         "-tr", "--truth", type=str, required=False, default='IGRFMAG1', help="Name of the variable corresponding to the truth for training the model. Ex : --truth 'IGRFMAG1'", metavar=''
     )
     parser.add_argument(
-        "-ml", "--model", type=str, required=False, default='LTC', help="Name of the model to use. Available models : 'MLP', 'CNN', 'ResNet18', 'LSTM', 'GRU', 'ResNet18v2', 'MLP_3L, MLP_3Lv2' 'LTC', 'CFC'. Ex : --model 'CNN'", metavar=''
+        "-ml", "--model", type=str, required=False, default='mlp', help="Name of the model to use. Available models : 'MLP', 'CNN', 'ResNet18', 'LSTM', 'GRU', 'ResNet18v2', 'MLP_3L, MLP_3Lv2' 'LTC', 'CFC'. Ex : --model 'CNN'", metavar=''
     )
     parser.add_argument(
         "-wd", "--weight_decay", type=float, required=False, default=0.001, help="Adam weight decay value. Ex : --weight_decay 0.00001", metavar=''
     )
     parser.add_argument(
-        "-lr", "--learn_rate", type=float, required=False, default=0.02, help=" ", metavar=''
+        "-lr", "--learn_rate", type=float, required=False, default=0.002, help=" ", metavar=''
     )
     args = parser.parse_args()
 
-    in_f_name = 'FLUXCD_X_Y_Z_TOT-D_noBat1' #'CUR_STRB',
-    shuffle_= True
-    hidden_features =4096 #MLP
-    EPOCHS     = args.epochs
-    BATCH_SIZE = args.batch
-    DEVICE     = args.device
+    #args.in_f_name = 'FLUXCD_X_Y_Z_TOT-D_noBat1' #'CUR_STRB',
+    #args.shuffle_= True
+    args.hidden_features = 4096 #MLP
     SEQ_LEN    = args.seq
     SCALING    = args.scaling
     COR        = args.corrections # 3
     TL         = args.tolleslawson # 1
     TRUTH      = args.truth
-    MODEL      = args.model
     WEIGHT_DECAY = args.weight_decay
-    LR = args.learn_rate
     
-    if DEVICE == 'cuda':
-        print(f'\nCurrently training on {torch.cuda.get_device_name(DEVICE)}')
+    if args.device == 'cuda':
+        print(f'\nCurrently training on {torch.cuda.get_device_name(args.device)}')
     else:
         print('Currently training on cpu.')
 
@@ -464,56 +459,57 @@ if __name__ == "__main__":
 
         # Dataloaders
         train_loader  = DataLoader(train,
-                               batch_size=BATCH_SIZE,
+                               batch_size=args.batch,
                                shuffle=True,
                                num_workers=0,
                                pin_memory=False) #drop_last=True
 
         test_loader    = DataLoader(test,
-                                   batch_size=BATCH_SIZE,
+                                   batch_size=args.batch,
                                    shuffle=False,
                                    num_workers=0,
                                    pin_memory=False) #drop_last=True
 
         # Model
-        if MODEL == 'MLP':
-            model = MLP(SEQ_LEN,len(features)-2, hidden_features).to(DEVICE)
-        elif MODEL == 'MLP_3L':
-            model = MLP_3L(SEQ_LEN,len(features)-2,hidden_features).to(DEVICE)
-        elif MODEL == 'MLP_3Lv2':
-            model = MLP_3Lv2(SEQ_LEN,len(features)-2,hidden_features).to(DEVICE)
-        elif MODEL == 'CNN':
-            filters=[32,64]
-            num_neurons=[64,32]
-            n_convblock=2
-            model = Optuna_CNN(SEQ_LEN,len(features)-2,n_convblock,filters,num_neurons).to(DEVICE)
-        elif MODEL == 'ResNet18':
-            model = ResNet18().to(DEVICE)
-        elif MODEL == 'ResNet18v2':
-            model = ResNet18v2().to(DEVICE)
-        elif MODEL == 'LSTM':
-            num_LSTM    = 1
-            hidden_size = [32]
-            num_layers  = [1]
-            num_linear  = 1
-            num_neurons = [32]            
-            model = LSTM(SEQ_LEN, hidden_size, num_layers, num_LSTM, num_linear, num_neurons, DEVICE).to(DEVICE)
-        elif MODEL == 'GRU':
-            num_layers = 11
-            model = GRU(SEQ_LEN,len(features)-2,num_layers = 11).to(DEVICE) # 20 * 15 = 300
-        elif MODEL == 'CFC':
-            model = CfC(len(features)-2,1).to(DEVICE) 
-        elif MODEL == 'LTC':
-            units = 16
+        if args.model == 'MLP':
+            model = MLP(SEQ_LEN,len(features)-2, args.hidden_features)
+        elif args.model == 'MLP_3L':
+            model = MLP_3L(SEQ_LEN,len(features)-2,args.hidden_features)
+        elif args.model == 'MLP_3Lv2':
+            model = MLP_3Lv2(SEQ_LEN,len(features)-2,args.hidden_features)
+        elif args.model == 'CNN':
+            args.filters=[32,64]
+            args.num_neurons=[64,32]
+            args.n_convblock=2
+            model = Optuna_CNN(SEQ_LEN,len(features)-2,n_convblock,filters,num_neurons)
+        elif args.model == 'ResNet18':
+            model = ResNet18()
+        elif args.model == 'ResNet18v2':
+            model = ResNet18v2()
+        elif args.model == 'LSTM':
+            args.num_LSTM    = 1
+            args.hidden_size = [32]
+            args.num_layers  = [1]
+            args.num_linear  = 1
+            args.num_neurons = [32]            
+            model = LSTM(SEQ_LEN, hidden_size, num_layers, num_LSTM, num_linear, num_neurons, DEVICE)
+        elif args.model == 'GRU':
+            args.num_layers = 11
+            model = GRU(SEQ_LEN,len(features)-2,num_layers = 11) # 20 * 15 = 300
+        elif args.model == 'CFC':
+            model = CfC(len(features)-2,1)
+        elif args.model == 'LTC':
+            args.units = 16
             wiring = AutoNCP(units, 1) 
-            model = LTC(len(features)-2, wiring, batch_first=True).to(DEVICE)
+            model = LTC(len(features)-2, wiring, batch_first=True)
+        model = model.to(args.device)
         model.name = model.__class__.__name__
 
         # Loss function
         criterion = torch.nn.MSELoss()
 
         # Training
-        train_loss, test_loss, Best_RMSE, Best_model = make_training(model, EPOCHS, train_loader, test_loader, LR, scaling[fold])
+        train_loss, test_loss, Best_RMSE, Best_model = make_training(model, args.epochs, train_loader, test_loader, args.learn_rate, scaling[fold])
         
         # Save results from training
         train_loss_history.append(train_loss)
@@ -523,21 +519,21 @@ if __name__ == "__main__":
         if fold == 0:
             #folder_path = f'experiments/HF_{hidden_features}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}'
             #os.mkdir(folder_path)
-            if MODEL == 'MLP':
-                folder_path = f'experiments/{in_f_name}_{hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
-            elif MODEL == 'MLP_3L':
-                folder_path = f'experiments/{hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
-            elif MODEL == 'MLP_3Lv2':
-                folder_path = f'experiments/{hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
-            elif MODEL == 'CNN':
+            if args.model == 'MLP':
+                folder_path = f'experiments/{in_f_name}_{args.hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+            elif args.model == 'MLP_3L':
+                folder_path = f'experiments/{args.hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+            elif args.model == 'MLP_3Lv2':
+                folder_path = f'experiments/{args.hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+            elif args.model == 'CNN':
                 folder_path = f'experiments/Avgpool_CF{filters}_lf{num_neurons}_nb{n_convblock}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
-            elif MODEL == 'GRU':
+            elif args.model == 'GRU':
                 folder_path = f'experiments/shuffle={shuffle_}_nl{num_layers}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
-            elif MODEL == 'LSTM':
+            elif args.model == 'LSTM':
                 folder_path = f'experiments/shuffle={shuffle_}_nl{num_LSTM}{num_linear}_nls{num_layers}_hs{hidden_size}_hf{num_neurons}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
-            elif MODEL == 'CfC':
+            elif args.model == 'CfC':
                 folder_path = f'experiments/{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
-            elif MODEL == 'LTC':
+            elif args.model == 'LTC':
                 folder_path = f'experiments/{Best_model.name}_units{units}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             os.makedirs(folder_path, exist_ok=True)
 
@@ -578,8 +574,8 @@ if __name__ == "__main__":
     # Save parameters
     params = pd.DataFrame(columns=['seq_len','epochs','batch_size','training_time','now_time','fold0','fold1','fold_total'])
     params.loc[0,'seq_len'] = SEQ_LEN
-    params.loc[0,'epochs'] = EPOCHS
-    params.loc[0,'batch_size'] = BATCH_SIZE
+    params.loc[0,'epochs'] = args.epochs
+    params.loc[0,'batch_size'] = args.batch
     params.loc[0,'training_time'] = end_time
     params.loc[0,'now_time'] = now_time
     params.loc[0,'fold0'] = RMSE_history[0]
