@@ -151,9 +151,9 @@ def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']
                     else:
                         predictions, h1 = model(inputs,h1[-inputs.size()[0]:].detach())
                         #print('########################')
-                else:
-                    predictions = model(inputs)
-                predictions = predictions[:,-1,:]
+            else:
+                predictions = model(inputs)
+            predictions = predictions[:,-1,:]
                 
                 # Save prediction for this batch
                 preds.append(predictions.cpu())
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     parser.add_argument(
-        "-d","--device", type=str, required=False, default='cuda', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
+        "-d","--device", type=str, required=False, default='cpu', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
     ) # args.device
     parser.add_argument(
         "-e","--epochs", type=int, required=False, default=20, help="Number of epochs to train the model, default=35. Ex : --epochs 200", metavar=""
@@ -251,6 +251,10 @@ if __name__ == "__main__":
 
     #args.in_f_name = 'FLUXCD_X_Y_Z_TOT-D_noBat1' #'CUR_STRB',
     #args.shuffle_= True
+
+    if torch.cuda.is_available():
+        args.device = 'cuda'
+
     args.hidden_features = 4096 #MLP
     COR        = args.corrections # 3
     TL         = args.tolleslawson # 1
@@ -502,6 +506,10 @@ if __name__ == "__main__":
             model = LTC(len(features)-2, wiring, batch_first=True)
         model = model.to(args.device)
         model.name = model.__class__.__name__
+        print('yyyyyyyyyyyyyyyyy')
+        print(model.name)
+        print(model.__class__.__name__)
+
 
         # Loss function
         criterion = torch.nn.MSELoss()
