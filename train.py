@@ -347,7 +347,7 @@ if __name__ == "__main__":
                 'TL_comp_mag2_cl','TL_comp_mag3_cl',
                 'FLUXC_X','FLUXC_Y','FLUXC_Z',#'FLUXC_TOT',
                 'FLUXD_X','FLUXD_Y','FLUXD_Z','FLUXD_TOT',
-                'UNCOMPMAG4', 'UNCOMPMAG5'
+                'UNCOMPMAG4', 'UNCOMPMAG5',
                 #in_f_name,
                 TRUTH]
     features = mags_to_cor + mags_to_cor2 + other_features 
