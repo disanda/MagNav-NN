@@ -527,13 +527,13 @@ if __name__ == "__main__":
             elif MODEL == 'CNN':
                 folder_path = f'models/Avgpool_CF{filters}_lf{num_neurons}_nb{n_convblock}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'GRU':
-                folder_path = f'shuffle={shuffle_}_nl{num_layers}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'models/shuffle={shuffle_}_nl{num_layers}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'LSTM':
-                folder_path = f'shuffle={shuffle_}_nl{num_LSTM}{num_linear}_nls{num_layers}_hs{hidden_size}_hf{num_neurons}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'models/shuffle={shuffle_}_nl{num_LSTM}{num_linear}_nls{num_layers}_hs{hidden_size}_hf{num_neurons}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'CfC':
-                folder_path = f'{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'models/{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'LTC':
-                folder_path = f'{Best_model.name}_units{units}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'models/{Best_model.name}_units{units}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             os.makedirs(folder_path, exist_ok=True)
         torch.save(Best_model,folder_path+f'/{Best_model.name}_fold{fold}.pt')
 
