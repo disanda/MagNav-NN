@@ -323,10 +323,7 @@ if __name__ == "__main__":
     else:
         print(f'Tolles-Lawson correction done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
 
-    #----Apply IGRF and diurnal corrections----#
-
-    flights_cor = {}
-
+    #----Select features----#
     if TL == 0:
         mags_to_cor = ['UNCOMPMAG4', 'UNCOMPMAG5']
         mags_to_cor2 = []
@@ -336,28 +333,6 @@ if __name__ == "__main__":
     if TL == 2:
         mags_to_cor = ['TL_comp_mag4_cl', 'TL_comp_mag5_cl']
         mags_to_cor2 = ['UNCOMPMAG4', 'UNCOMPMAG5']
-    
-    if COR == 0:
-        flights_cor = flights.copy()
-        del flights
-        print(f'No correction done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
-    if COR == 1:
-        for n in tqdm(flights_num):
-            flights_cor[n] = apply_corrections(flights[n], mags_to_cor, diurnal=False, igrf=True)
-        del flights
-        print(f'IGRF correction done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
-    if COR == 2: 
-        for n in tqdm(flights_num):
-            flights_cor[n] = apply_corrections(flights[n], mags_to_cor, diurnal=True, igrf=False)
-        del flights
-        print(f'Diurnal correction done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
-    if COR == 3:
-        for n in tqdm(flights_num):
-            flights_cor[n] = apply_corrections(flights[n], mags_to_cor, diurnal=True, igrf=True)
-        del flights
-        print(f'IGRF+Diurnal correction done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
-    
-    #----Select features----#
     
     # Always keep the 'LINE' feature in the feature list so that the MagNavDataset function can split the flight data
     other_features = [#'V_BAT1',
@@ -378,8 +353,30 @@ if __name__ == "__main__":
                 TRUTH]
     features = mags_to_cor + mags_to_cor2 + other_features 
     
-    dataset = {}
+    #----Apply IGRF and diurnal corrections----#
+
+    flights_cor = {}
+    if COR == 0:
+        flights_cor = flights.copy()
+        del flights
+        print(f'No correction done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
+    if COR == 1:
+        for n in tqdm(flights_num):
+            flights_cor[n] = apply_corrections(flights[n], mags_to_cor, diurnal=False, igrf=True)
+        del flights
+        print(f'IGRF correction done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
+    if COR == 2: 
+        for n in tqdm(flights_num):
+            flights_cor[n] = apply_corrections(flights[n], mags_to_cor, diurnal=True, igrf=False)
+        del flights
+        print(f'Diurnal correction done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
+    if COR == 3:
+        for n in tqdm(flights_num):
+            flights_cor[n] = apply_corrections(flights[n], mags_to_cor, diurnal=True, igrf=True)
+        del flights
+        print(f'IGRF+Diurnal correction done. Memory used {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} Mb')
     
+    dataset = {}
     for n in flights_num:
         dataset[n] = flights_cor[n][features]
     
