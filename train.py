@@ -9,6 +9,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import random
+import json
 
 import argparse
 import warnings
@@ -30,7 +31,7 @@ import data_utils
 from data_utils import trim_data, Standard_scaling, MinMax_scaling, apply_corrections
 
 
-def make_training(model, epochs, train_loader, test_loader, scaling=['None']):
+def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']):
     '''
     PyTorch training loop with testing.
     
@@ -46,7 +47,7 @@ def make_training(model, epochs, train_loader, test_loader, scaling=['None']):
     - `test_loss_history` : history of loss values during testing
     '''
     # Optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.002, weight_decay=WEIGHT_DECAY) # 1st:0.001
+    optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY) # 1st:0.001
     
     #lambda1 = lambda epoch: 0.9**epoch
     #scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
@@ -214,10 +215,10 @@ if __name__ == "__main__":
         "-d","--device", type=str, required=False, default='cuda', help="Which GPU to use (cuda or cpu), default='cuda'. Ex : --device 'cuda' ", metavar=""
     )
     parser.add_argument(
-        "-e","--epochs", type=int, required=False, default=35, help="Number of epochs to train the model, default=35. Ex : --epochs 200", metavar=""
+        "-e","--epochs", type=int, required=False, default=10, help="Number of epochs to train the model, default=35. Ex : --epochs 200", metavar=""
     )
     parser.add_argument(
-        "-b","--batch", type=int, required=False, default=256, help="Batch size for training, default=256. Ex : --batch 64", metavar=""
+        "-b","--batch", type=int, required=False, default=7, help="Batch size for training, default=256. Ex : --batch 64", metavar=""
     )
     parser.add_argument(
         "-sq","--seq", type=int, required=False, default=1, help="Length sequence of data, default=20. Ex : --seq 15", metavar=""
@@ -243,8 +244,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "-wd", "--weight_decay", type=float, required=False, default=0.001, help="Adam weight decay value. Ex : --weight_decay 0.00001", metavar=''
     )
-    
+    parser.add_argument(
+        "-lr", "--learn_rate", type=float, required=False, default=0.02, help=" ", metavar=''
+    )
     args = parser.parse_args()
+
     in_f_name = 'FLUXCD_X_Y_Z_TOT-D_noBat1' #'CUR_STRB',
     shuffle_= True
     hidden_features =4096 #MLP
@@ -258,6 +262,7 @@ if __name__ == "__main__":
     TRUTH      = args.truth
     MODEL      = args.model
     WEIGHT_DECAY = args.weight_decay
+    LR = args.learn_rate
     
     if DEVICE == 'cuda':
         print(f'\nCurrently training on {torch.cuda.get_device_name(DEVICE)}')
@@ -508,7 +513,7 @@ if __name__ == "__main__":
         criterion = torch.nn.MSELoss()
 
         # Training
-        train_loss, test_loss, Best_RMSE, Best_model = make_training(model, EPOCHS, train_loader, test_loader, scaling[fold])
+        train_loss, test_loss, Best_RMSE, Best_model = make_training(model, EPOCHS, train_loader, test_loader, LR, scaling[fold])
         
         # Save results from training
         train_loss_history.append(train_loss)
@@ -519,25 +524,27 @@ if __name__ == "__main__":
             #folder_path = f'experiments/HF_{hidden_features}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}'
             #os.mkdir(folder_path)
             if MODEL == 'MLP':
-                folder_path = f'models/{in_f_name}_{hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/{in_f_name}_{hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'MLP_3L':
-                folder_path = f'models/{hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/{hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'MLP_3Lv2':
-                folder_path = f'models/{hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/{hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'CNN':
-                folder_path = f'models/Avgpool_CF{filters}_lf{num_neurons}_nb{n_convblock}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/Avgpool_CF{filters}_lf{num_neurons}_nb{n_convblock}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'GRU':
-                folder_path = f'models/shuffle={shuffle_}_nl{num_layers}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/shuffle={shuffle_}_nl{num_layers}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'LSTM':
-                folder_path = f'models/shuffle={shuffle_}_nl{num_LSTM}{num_linear}_nls{num_layers}_hs{hidden_size}_hf{num_neurons}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/shuffle={shuffle_}_nl{num_LSTM}{num_linear}_nls{num_layers}_hs{hidden_size}_hf{num_neurons}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'CfC':
-                folder_path = f'models/{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             elif MODEL == 'LTC':
-                folder_path = f'models/{Best_model.name}_units{units}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/{Best_model.name}_units{units}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
             os.makedirs(folder_path, exist_ok=True)
+
+            with open(folder_path + '/args_parameters.txt', 'w') as f:
+                json.dump(args.__dict__, f, indent=2)
+
         torch.save(Best_model,folder_path+f'/{Best_model.name}_fold{fold}.pt')
-
-
 
 
     # Compute pre-processing+training time
