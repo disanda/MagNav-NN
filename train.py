@@ -152,9 +152,9 @@ def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']
                     else:
                         predictions, h1 = model(inputs,h1[-inputs.size()[0]:].detach())
                         #print('########################')
+                    predictions = predictions[:,-1,:]
                 else:
                     predictions = model(inputs)
-                predictions = predictions[:,-1,:]
                 
                 # Save prediction for this batch
                 preds.append(predictions.cpu())
