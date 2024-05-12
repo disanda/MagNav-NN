@@ -143,7 +143,7 @@ def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']
                 #predictions = model(inputs)
 
                 # Make predictions for this batch
-                if model.__class__.__name__ == 'CfC' or 'LTC':
+                if model.__class__.__name__ == ('CfC' or 'LTC'):
                     inputs = inputs.transpose(2,1) # (batch_size, seq, in_features) > (batch_size, in_features, seq)
                     if batch_index == 0:
                         h0 = torch.zeros(inputs.size()[0],1).to(args.device)
@@ -507,10 +507,9 @@ if __name__ == "__main__":
             model = LTC(len(features)-2, wiring, batch_first=True)
         model = model.to(args.device)
         model.name = model.__class__.__name__
-        print('yyyyyyyyyyyyyyyyy')
-        print(model.name)
-        print(model.__class__.__name__)
-
+        # print('yyyyyyyyyyyyyyyyy')
+        # print(model.name)
+        # print(model.__class__.__name__)
 
         # Loss function
         criterion = torch.nn.MSELoss()
