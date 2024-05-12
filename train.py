@@ -168,12 +168,12 @@ def make_training(model, epochs, train_loader, test_loader, LR, scaling=['None']
         preds = np.concatenate(preds)
 
         if scaling[0] == 'None':
-            RMSE_epoch = magnav.rmse(preds,test.y[SEQ_LEN:],False)
+            RMSE_epoch = magnav.rmse(preds,test.y[args.seq:],False)
         elif scaling[0] == 'std':
-            RMSE_epoch = magnav.rmse(preds*scaling[2]+scaling[1],test.y[SEQ_LEN:]*scaling[2]+scaling[1],False)
+            RMSE_epoch = magnav.rmse(preds*scaling[2]+scaling[1],test.y[args.seq:]*scaling[2]+scaling[1],False)
         elif scaling[0] == 'minmax':
             RMSE_epoch = magnav.rmse(scaling[3]+((preds-scaling[1])*(scaling[4]-scaling[3])/(scaling[2]-scaling[1])),
-                               scaling[3]+((test.y[SEQ_LEN:]-scaling[1])*(scaling[4]-scaling[3])/(scaling[2]-scaling[1])),False)
+                               scaling[3]+((test.y[args.seq:]-scaling[1])*(scaling[4]-scaling[3])/(scaling[2]-scaling[1])),False)
 
         test_loss = test_running_loss / batch_index
         test_loss_history.append(test_loss)
@@ -200,12 +200,6 @@ if __name__ == "__main__":
     
     # Start timer
     start_time = time.time()
-    
-    # set seed for reproducibility
-    seed = 28 # 27
-    torch.manual_seed(seed)
-    random.seed(seed)
-    np.random.seed(seed)
     
     #----User arguments----#
     
@@ -249,11 +243,15 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    # set seed for reproducibility
+    args.seed = 28 # 27
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+
     #args.in_f_name = 'FLUXCD_X_Y_Z_TOT-D_noBat1' #'CUR_STRB',
     #args.shuffle_= True
     args.hidden_features = 4096 #MLP
-    SEQ_LEN    = args.seq
-    SCALING    = args.scaling
     COR        = args.corrections # 3
     TL         = args.tolleslawson # 1
     TRUTH      = args.truth
@@ -384,7 +382,7 @@ if __name__ == "__main__":
     
     #----Data scaling----#
     
-    if SCALING == 0:
+    if args.scaling == 0:
         df = pd.DataFrame()
         for flight in flights_num:
             df = pd.concat([df,dataset[flight]], ignore_index=True, axis=0)
@@ -394,7 +392,7 @@ if __name__ == "__main__":
         for n in range(len(test_lines)):
             scaling[n] = ['None']
         
-    elif SCALING == 2:
+    elif args.scaling == 2:
         # Save scaling parameters
         bound = [-1,1]
         scaling = {}
@@ -416,7 +414,7 @@ if __name__ == "__main__":
         for flight in flights_num:
             df = pd.concat([df,dataset[flight]], ignore_index=True, axis=0)
 
-    elif SCALING == 1:
+    elif args.scaling == 1:
         # Save scaling parameters
         scaling = {}
         df = pd.DataFrame()
@@ -454,8 +452,8 @@ if __name__ == "__main__":
         print('--------------------\n')
         
         # Split to train and test
-        train = data_utils.MagNavDataset(df, seq_len=SEQ_LEN, split='train', train_lines=train_lines[fold], test_lines=test_lines[fold], truth=TRUTH)
-        test  = data_utils.MagNavDataset(df, seq_len=SEQ_LEN, split='test', train_lines=train_lines[fold], test_lines=test_lines[fold], truth=TRUTH)
+        train = data_utils.MagNavDataset(df, seq_len=args.seq, split='train', train_lines=train_lines[fold], test_lines=test_lines[fold], truth=TRUTH)
+        test  = data_utils.MagNavDataset(df, seq_len=args.seq, split='test', train_lines=train_lines[fold], test_lines=test_lines[fold], truth=TRUTH)
 
         # Dataloaders
         train_loader  = DataLoader(train,
@@ -472,16 +470,16 @@ if __name__ == "__main__":
 
         # Model
         if args.model == 'MLP':
-            model = MLP(SEQ_LEN,len(features)-2, args.hidden_features)
+            model = MLP(args.seq,len(features)-2, args.hidden_features)
         elif args.model == 'MLP_3L':
-            model = MLP_3L(SEQ_LEN,len(features)-2,args.hidden_features)
+            model = MLP_3L(args.seq,len(features)-2,args.hidden_features)
         elif args.model == 'MLP_3Lv2':
-            model = MLP_3Lv2(SEQ_LEN,len(features)-2,args.hidden_features)
+            model = MLP_3Lv2(args.seq,len(features)-2,args.hidden_features)
         elif args.model == 'CNN':
             args.filters=[32,64]
             args.num_neurons=[64,32]
             args.n_convblock=2
-            model = Optuna_CNN(SEQ_LEN,len(features)-2,n_convblock,filters,num_neurons)
+            model = Optuna_CNN(args.seq,len(features)-2,n_convblock,filters,num_neurons)
         elif args.model == 'ResNet18':
             model = ResNet18()
         elif args.model == 'ResNet18v2':
@@ -492,10 +490,10 @@ if __name__ == "__main__":
             args.num_layers  = [1]
             args.num_linear  = 1
             args.num_neurons = [32]            
-            model = LSTM(SEQ_LEN, hidden_size, num_layers, num_LSTM, num_linear, num_neurons, DEVICE)
+            model = LSTM(args.seq, hidden_size, num_layers, num_LSTM, num_linear, num_neurons, DEVICE)
         elif args.model == 'GRU':
             args.num_layers = 11
-            model = GRU(SEQ_LEN,len(features)-2,num_layers = 11) # 20 * 15 = 300
+            model = GRU(args.seq,len(features)-2,num_layers = 11) # 20 * 15 = 300
         elif args.model == 'CFC':
             model = CfC(len(features)-2,1)
         elif args.model == 'LTC':
@@ -520,21 +518,21 @@ if __name__ == "__main__":
             #folder_path = f'experiments/HF_{hidden_features}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}'
             #os.mkdir(folder_path)
             if args.model == 'MLP':
-                folder_path = f'experiments/{in_f_name}_{args.hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/hf{args.hidden_features}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{args.seed}'
             elif args.model == 'MLP_3L':
-                folder_path = f'experiments/{args.hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/hf{args.hidden_features}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{args.seed}'
             elif args.model == 'MLP_3Lv2':
-                folder_path = f'experiments/{args.hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/{args.hidden_features}hf_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{args.seed}'
             elif args.model == 'CNN':
-                folder_path = f'experiments/Avgpool_CF{filters}_lf{num_neurons}_nb{n_convblock}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/Avgpool_CF{filters}_lf{num_neurons}_nb{n_convblock}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{args.seed}'
             elif args.model == 'GRU':
-                folder_path = f'experiments/shuffle={shuffle_}_nl{num_layers}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/shuffle={shuffle_}_nl{num_layers}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{args.seed}'
             elif args.model == 'LSTM':
-                folder_path = f'experiments/shuffle={shuffle_}_nl{num_LSTM}{num_linear}_nls{num_layers}_hs{hidden_size}_hf{num_neurons}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/shuffle={shuffle_}_nl{num_LSTM}{num_linear}_nls{num_layers}_hs{hidden_size}_hf{num_neurons}_{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{args.seed}'
             elif args.model == 'CfC':
-                folder_path = f'experiments/{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/{Best_model.name}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{args.seed}'
             elif args.model == 'LTC':
-                folder_path = f'experiments/{Best_model.name}_units{units}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{seed}'
+                folder_path = f'experiments/{Best_model.name}_units{units}_{scaling[0][0]}_TL{TL}_COR{COR}_{TRUTH}_seed{args.seed}'
             os.makedirs(folder_path, exist_ok=True)
 
             with open(folder_path + '/args_parameters.txt', 'w') as f:
@@ -573,7 +571,7 @@ if __name__ == "__main__":
     
     # Save parameters
     params = pd.DataFrame(columns=['seq_len','epochs','batch_size','training_time','now_time','fold0','fold1','fold_total'])
-    params.loc[0,'seq_len'] = SEQ_LEN
+    params.loc[0,'seq_len'] = args.seq
     params.loc[0,'epochs'] = args.epochs
     params.loc[0,'batch_size'] = args.batch
     params.loc[0,'training_time'] = end_time
